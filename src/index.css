@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --ink: 16 24 40;
+    --ink-soft: 71 84 103;
+    --line: 228 233 240;
+    --surface: 255 255 255;
+    --canvas: 248 250 252;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-[rgb(var(--canvas))] text-[rgb(var(--ink))] antialiased;
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  /* Every interactive element keeps a visible focus ring for keyboard users. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+  }
+
+  /* Motion explains state changes, but never at the cost of a user who has
+     asked the OS to stop animating things. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  .card {
+    @apply rounded-2xl border border-[rgb(var(--line))] bg-white shadow-sm;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-[rgb(var(--ink))];
+  }
+
+  .hint {
+    @apply mt-1.5 text-sm text-[rgb(var(--ink-soft))];
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-[rgb(var(--line))] bg-white px-4 py-3 text-base
+           text-[rgb(var(--ink))] transition-colors placeholder:text-slate-400
+           hover:border-slate-300 focus:border-brand-500;
+  }
+
+  .input-error {
+    @apply border-rose-400 hover:border-rose-400 focus:border-rose-500;
+  }
+
+  /* Touch targets stay at least 44px tall on every button variant. */
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 py-3
+           text-base font-semibold transition-all duration-150 disabled:cursor-not-allowed
+           disabled:opacity-55;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:scale-[0.99];
+  }
+
+  .btn-secondary {
+    @apply btn border border-[rgb(var(--line))] bg-white text-[rgb(var(--ink))]
+           hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99];
+  }
+
+  .btn-ghost {
+    @apply btn px-3 text-[rgb(var(--ink-soft))] hover:bg-slate-100 hover:text-[rgb(var(--ink))];
+  }
+
+  .btn-danger {
+    @apply btn bg-rose-600 text-white hover:bg-rose-700 active:scale-[0.99];
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Used when a step replaces another, so the change reads as movement forward
+   rather than a flicker of new content. */
+.animate-rise {
+  animation: rise 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
