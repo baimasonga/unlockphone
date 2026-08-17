@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth-context';
 import { Alert, Skeleton, Spinner, StatusPill } from '../components/ui';
 import { formatMoney } from '../../shared/money';
 import { STATUS_LABELS, type OrderStatus } from '../../shared/types';
+import { AdminCases } from './AdminCases';
 
 const FILTERS: Array<{ value: string; label: string }> = [
   { value: '', label: 'All' },
@@ -22,6 +23,7 @@ export function Admin() {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [workingOn, setWorkingOn] = useState<string | null>(null);
+  const [tab, setTab] = useState<'orders' | 'cases'>('orders');
 
   const refresh = useCallback(async () => {
     try {
@@ -76,8 +78,25 @@ export function Admin() {
     <div className="container-page py-10 sm:py-14">
       <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Operations</h1>
       <p className="mt-2 text-[rgb(var(--ink-soft))]">
-        Live order queue, supplier state, and manual overrides.
+        Unlock order queue and proof-of-ownership cases.
       </p>
+
+      <div className="mt-6 flex gap-1 border-b border-[rgb(var(--line))]">
+        {(['orders', 'cases'] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setTab(value)}
+            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-bold capitalize transition-colors ${
+              tab === value
+                ? 'border-brand-600 text-brand-700'
+                : 'border-transparent text-[rgb(var(--ink-soft))] hover:text-[rgb(var(--ink))]'
+            }`}
+          >
+            {value === 'orders' ? 'Unlock orders' : 'Ownership cases'}
+          </button>
+        ))}
+      </div>
 
       {error && (
         <div className="mt-6">
@@ -85,6 +104,14 @@ export function Admin() {
         </div>
       )}
 
+      {tab === 'cases' && (
+        <div className="mt-8">
+          <AdminCases />
+        </div>
+      )}
+
+      {tab === 'orders' && (
+        <>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat label="Orders" value={stats ? String(stats.orders) : null} />
         <Stat label="Processing" value={stats ? String(stats.working) : null} />
@@ -248,6 +275,8 @@ export function Admin() {
             })}
           </ul>
         </section>
+      )}
+        </>
       )}
     </div>
   );

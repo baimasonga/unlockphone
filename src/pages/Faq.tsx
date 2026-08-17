@@ -61,11 +61,11 @@ const SECTIONS = [
     items: [
       {
         q: 'Can you unlock a phone I am locked out of?',
-        a: 'No. We do not remove screen locks, PINs, patterns, or biometrics. Those protect the owner of the device, and getting past one is a matter for the manufacturer with proof of purchase.',
+        a: 'Not by bypassing the lock — those protect the device’s owner. But if it is your device, our Locked device help flow verifies your proof of purchase and takes your case to the manufacturer’s official recovery channel, which is the lawful way through. It is owner-verification, not a bypass.',
       },
       {
         q: 'Can you remove iCloud Activation Lock or Google FRP?',
-        a: 'No. Both are anti-theft features tied to the previous owner’s account. Only that account holder, or the manufacturer with proof of purchase, can clear them. We decline these requests.',
+        a: 'We never bypass them. Both are anti-theft features tied to an account, and only that account holder or the manufacturer (with proof of purchase) can clear them. If you are the owner, open a proof-of-ownership case and we will package your evidence and route it to Apple or Google for you.',
       },
       {
         q: 'What about a phone that is blacklisted, lost, or stolen?',

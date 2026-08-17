@@ -232,17 +232,56 @@ export function Home() {
         </div>
       </section>
 
-      {/* Setting expectations honestly is part of the product: it cuts refund
-          requests we would otherwise have to decline. */}
+      {/* Two safety tools, framed honestly: the pre-purchase check and the
+          owner-verification path for locks a carrier unlock cannot touch. */}
+      <section className="container-page pb-16">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Link
+            to="/device-check"
+            className="card group flex items-center justify-between p-7 transition-all hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div>
+              <h3 className="text-xl font-bold">Check a device first</h3>
+              <p className="mt-1 max-w-sm text-sm text-[rgb(var(--ink-soft))]">
+                Blacklist, carrier lock, and iCloud / Google lock status. Run it before you buy
+                a used phone or place an unlock.
+              </p>
+            </div>
+            <span className="text-2xl text-brand-500 transition-transform group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+          <Link
+            to="/locked-device-help"
+            className="card group flex items-center justify-between p-7 transition-all hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div>
+              <h3 className="text-xl font-bold">Locked out of your own phone?</h3>
+              <p className="mt-1 max-w-sm text-sm text-[rgb(var(--ink-soft))]">
+                Screen lock, iCloud, or Google FRP — we verify your ownership and take it to the
+                manufacturer’s official recovery channel.
+              </p>
+            </div>
+            <span className="text-2xl text-brand-500 transition-transform group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+        </div>
+      </section>
+
       <section className="container-page pb-24">
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 sm:p-8">
-          <h2 className="text-lg font-bold text-amber-900">What we cannot unlock</h2>
+          <h2 className="text-lg font-bold text-amber-900">Where a carrier unlock stops</h2>
           <p className="mt-2 max-w-3xl text-sm leading-relaxed text-amber-900/90">
-            A carrier unlock frees your phone to use other networks. It is not a way past a
-            lock you cannot get through yourself. We do not remove screen locks, Google FRP
-            locks, or iCloud activation locks, and we cannot unlock a device that is reported
-            lost or stolen, blacklisted, or still under an unpaid contract or instalment plan.
-            If a check shows any of those, we refund you rather than take the order.
+            A carrier unlock frees your phone to use other networks. It is not a way past a lock
+            you cannot get through yourself. We never bypass screen locks, Google FRP, or iCloud
+            Activation Lock — those protect a device’s owner, and the only lawful way off them is
+            to{' '}
+            <Link to="/locked-device-help" className="font-bold underline">
+              prove ownership to the manufacturer
+            </Link>
+            , which we can help you do. We also cannot unlock a device that is reported lost or
+            stolen or is still under an unpaid contract.
           </p>
         </div>
       </section>

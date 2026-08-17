@@ -54,6 +54,11 @@ export const config = {
     apiKey: process.env.DHRU_API_KEY ?? '',
   },
   workerIntervalMs: Number(process.env.WORKER_INTERVAL_MS ?? 5000),
+  // When on, unlock orders are refused up front for blacklisted / lost-stolen
+  // devices instead of being taken and later refunded.
+  precheckDevices: (process.env.PRECHECK_DEVICES ?? 'true') !== 'false',
+  uploadsDir: process.env.UPLOADS_DIR ?? './data/uploads',
+  maxProofBytes: Number(process.env.MAX_PROOF_BYTES ?? 8 * 1024 * 1024),
   mailTransport: (process.env.MAIL_TRANSPORT ?? 'console') as 'console' | 'smtp',
   mailFrom: process.env.MAIL_FROM ?? 'Unlock Support <support@example.com>',
 };

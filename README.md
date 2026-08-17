@@ -78,18 +78,52 @@ price. Discounts round in the customer's favour.
 order is actually `delivered`, so a guessed reference reveals nothing — and tracking needs
 the reference *and* the order email.
 
+## Device safety & ownership tools
+
+Two features sit alongside carrier unlocking. Neither bypasses anything.
+
+**Device status check** (`/device-check`). A read-only IMEI report: blacklist /
+lost-stolen status, carrier lock, and iCloud Activation / Google FRP lock state. Run it
+before buying a used phone, or before ordering an unlock. The same check gates order
+creation — a blacklisted or lost/stolen IMEI is refused up front, so no money is taken for
+an unlock the network would only reject. (Activation/FRP locks do *not* block a carrier
+unlock — they are orthogonal — so they pass the gate and are surfaced as advice instead.)
+
+Reserved simulator IMEIs (the two digits before the check digit are the marker):
+
+| IMEI | Report |
+| --- | --- |
+| `353261110000669` | Reported lost/stolen → unlock refused |
+| `353261110000701` | iCloud Activation Lock ON → routed to ownership flow |
+| `353261110000776` | Google FRP lock ON → routed to ownership flow |
+| `353261110006674` | Clean → eligible for carrier unlock |
+
+**Proof-of-ownership cases** (`/locked-device-help`). The lawful path for a screen lock,
+Google FRP, or iCloud Activation Lock: the owner files a case with proof of purchase, staff
+verify it, and the system generates a submission package addressed to the party that can
+actually clear the lock — Apple, Google, or the device maker — through their official
+owner-recovery channel. A case runs a state machine
+(`submitted → reviewing → verified → submitted_to_authority → resolved`, with `rejected`
+and `needs_more_info` branches); the submission package is built exactly on `verified`.
+Proof files upload as raw binary (image/PDF, ≤8 MB) so the global JSON limit is untouched,
+and are viewable only by admins. **Nothing here defeats a lock — it routes a verified owner
+to the right authority.** A blacklisted or unverifiable device is turned away.
+
 ## Layout
 
 ```
-shared/     Domain logic used by both sides: IMEI, money, order state machine
+shared/     Domain logic used by both sides: IMEI, money, order + case state
+            machines, device-status types
 server/
   db/       Schema, seed catalog (brands, networks, pricing, TACs)
   lib/      Auth, errors, rate limiting, mail
-  routes/   catalog · auth · orders · admin
-  services/ catalog · orders · payments · supplier · fulfilment worker
+  routes/   catalog · auth · orders · checks · ownership · admin
+  services/ catalog · orders · payments · supplier · fulfilment ·
+            device-status · ownership
 src/
-  pages/    Home · Unlock wizard · Tracking · NetworkCheck · Networks ·
-            BrandLanding · Auth · Account · Admin · FAQ
+  pages/    Home · Unlock wizard · Tracking · NetworkCheck · DeviceCheck ·
+            OwnershipIntake · CaseTracking · Networks · BrandLanding ·
+            Auth · Account · Admin (+ AdminCases) · FAQ
   lib/      API client, auth context
 ```
 
@@ -114,21 +148,29 @@ GSMA allocation list into that table; nothing else changes.
 ## Tests
 
 ```bash
-npm test        # 38 tests
+npm test        # 64 tests
 npm run typecheck
 ```
 
-Coverage is aimed at the rules that cost money when wrong: IMEI checksum and masking,
-discount rounding, the order state machine's illegal transitions, duplicate-order
-prevention, and the guarantee that an unlock code cannot leak before delivery.
+Coverage is aimed at the rules that cost money or trust when wrong: IMEI checksum and
+masking, discount rounding, the order and case state machines' illegal transitions,
+duplicate-order prevention, the guarantee that an unlock code cannot leak before delivery,
+the device-status verdicts (including the blacklist gate), lock-type/brand mismatch
+rejection, and that a submission package is built only after ownership is verified.
 
 ## Scope
 
 This builds **carrier unlocking** — freeing a phone you own to work on other networks,
-through the official carrier and manufacturer databases. It deliberately does not do
-screen-lock bypass, Google FRP removal, or iCloud Activation Lock removal; those protect a
-device's owner, and the product copy says so plainly on the home page and FAQ rather than
-leaving customers to find out after paying.
+through the official carrier and manufacturer databases — plus two safety tools: a
+read-only device status check and an owner-verification case flow that routes locked-device
+requests to the manufacturer's official recovery channel.
+
+It deliberately does **not** bypass screen locks, Google FRP, or iCloud Activation Lock, and
+it will not touch a blacklisted or lost/stolen device. Those locks protect a device's owner;
+the only legitimate way past them is proof of ownership to the authority that holds them,
+which the ownership-case flow facilitates. The product copy says this plainly on the home
+page, the device check, the intake flow, and the FAQ rather than leaving customers to find
+out after paying.
 
 ## Notes on this build
 

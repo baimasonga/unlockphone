@@ -5,7 +5,16 @@ import { ApiError, asyncRoute } from '../lib/errors.js';
 import { requireAdmin } from '../lib/auth.js';
 import { findOrderByReference, toPublicOrder, transitionOrder } from '../services/orders.js';
 import { processOrder, refundOrder } from '../services/fulfilment.js';
+import {
+  findCaseByReference,
+  fileForCase,
+  toAdminCase,
+  transitionCase,
+} from '../services/ownership.js';
+import { readFileSync } from 'node:fs';
 import type { Order } from '../../shared/types.js';
+import type { CaseStatus } from '../../shared/ownership.js';
+import type { CaseRow } from '../services/ownership.js';
 
 export const adminRouter = Router();
 
@@ -167,3 +176,85 @@ adminRouter.patch(
     res.json({ ok: true });
   }),
 );
+
+// ── Proof-of-ownership cases ────────────────────────────────────────────────
+
+adminRouter.get('/cases', (req, res) => {
+  const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+  const search = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  const limit = Math.min(Number(req.query.limit ?? 50), 200);
+
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+  if (status) {
+    clauses.push('status = ?');
+    params.push(status);
+  }
+  if (search) {
+    clauses.push('(reference LIKE ? OR email LIKE ? OR imei LIKE ? OR full_name LIKE ?)');
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+
+  const rows = db
+    .prepare(`SELECT * FROM ownership_cases ${where} ORDER BY id DESC LIMIT ?`)
+    .all(...params, limit) as CaseRow[];
+
+  res.json({ cases: rows.map((row) => toAdminCase(row)) });
+});
+
+adminRouter.get('/cases/:reference', (req, res) => {
+  const record = findCaseByReference(req.params.reference);
+  if (!record) throw ApiError.notFound('Case not found.');
+  res.json({ case: toAdminCase(record) });
+});
+
+/** Advance a case through the review workflow. */
+adminRouter.post(
+  '/cases/:reference/transition',
+  asyncRoute(async (req, res) => {
+    const parsed = z
+      .object({
+        status: z.enum([
+          'reviewing',
+          'needs_more_info',
+          'verified',
+          'submitted_to_authority',
+          'resolved',
+          'rejected',
+        ]),
+        message: z.string().max(500).optional(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) throw ApiError.badRequest('Choose a valid next status.');
+
+    const record = findCaseByReference(req.params.reference);
+    if (!record) throw ApiError.notFound('Case not found.');
+
+    const defaults: Record<CaseStatus, string> = {
+      submitted: 'Case received.',
+      reviewing: 'A specialist is reviewing your proof of ownership.',
+      needs_more_info: 'We need clearer proof of purchase to continue — please reply with more detail.',
+      verified: 'Ownership verified. We have prepared the submission for the manufacturer.',
+      submitted_to_authority: 'Your verified request has been submitted to the manufacturer.',
+      resolved: 'The manufacturer has actioned the request. This case is complete.',
+      rejected: 'We could not verify ownership from the evidence provided.',
+    };
+
+    const updated = transitionCase(
+      record.reference,
+      parsed.data.status,
+      parsed.data.message?.trim() || defaults[parsed.data.status],
+      req.user!.email,
+    );
+    res.json({ case: toAdminCase(updated) });
+  }),
+);
+
+/** Stream a proof file for review. Admin only. */
+adminRouter.get('/cases/:reference/files/:fileId', (req, res) => {
+  const file = fileForCase(req.params.reference, Number(req.params.fileId));
+  res.setHeader('Content-Type', file.content_type);
+  res.setHeader('Content-Disposition', `inline; filename="${file.filename}"`);
+  res.send(readFileSync(file.storage_path));
+});

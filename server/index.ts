@@ -10,6 +10,8 @@ import { errorHandler } from './lib/errors.js';
 import { catalogRouter } from './routes/catalog.js';
 import { authRouter } from './routes/auth.js';
 import { orderRouter } from './routes/orders.js';
+import { checksRouter } from './routes/checks.js';
+import { ownershipRouter } from './routes/ownership.js';
 import { adminRouter } from './routes/admin.js';
 import { startWorker } from './services/fulfilment.js';
 
@@ -31,6 +33,8 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/catalog', catalogRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/orders', orderRouter);
+app.use('/api/checks', checksRouter);
+app.use('/api/ownership', ownershipRouter);
 app.use('/api/admin', adminRouter);
 
 app.use('/api', (_req, res) => {

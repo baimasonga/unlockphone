@@ -5,6 +5,8 @@ import type {
   PublicService,
   User,
 } from '../../shared/types';
+import type { DeviceStatusReport } from '../../shared/device-status';
+import type { CaseStatus, LockType } from '../../shared/ownership';
 
 export class ApiError extends Error {
   constructor(
@@ -77,6 +79,31 @@ export interface AdminOrder extends PublicOrder {
   attempts: number;
 }
 
+export interface PublicCase {
+  reference: string;
+  email_masked: string;
+  imei_masked: string;
+  device_model: string | null;
+  lock_type: LockType;
+  lock_label: string;
+  status: CaseStatus;
+  status_label: string;
+  authority: { name: string; channel: string; url: string };
+  has_package: boolean;
+  proof_count: number;
+  created_at: string;
+  events: Array<{ status: string; message: string; created_at: string }>;
+}
+
+export interface AdminCase extends PublicCase {
+  email: string;
+  full_name: string;
+  imei: string;
+  purchase_info: string;
+  package: string | null;
+  files: Array<{ id: number; filename: string; content_type: string; byte_size: number }>;
+}
+
 export interface AdminStats {
   orders: number;
   delivered: number;
@@ -104,6 +131,45 @@ export const api = {
     request<{ price_cents: number; currency: string }>(`/catalog/brands/${brand}/price-from`),
 
   checkImei: (imei: string) => post<ImeiCheck>('/catalog/imei/check', { imei }),
+
+  deviceStatus: (imei: string) =>
+    post<{ report: DeviceStatusReport }>('/checks/device-status', { imei }).then(
+      (r) => r.report,
+    ),
+
+  ownership: {
+    create: (input: {
+      email: string;
+      full_name: string;
+      imei: string;
+      lock_type: LockType;
+      purchase_info: string;
+      device_model?: string | null;
+    }) => post<{ case: PublicCase }>('/ownership', input).then((r) => r.case),
+
+    uploadProof: async (reference: string, file: File) => {
+      const response = await fetch(`/api/ownership/${reference}/proof`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream',
+          'x-filename': file.name,
+        },
+        body: file,
+      });
+      const text = await response.text();
+      const payload = text ? JSON.parse(text) : {};
+      if (!response.ok) {
+        throw new ApiError(response.status, payload.error ?? 'Upload failed.', payload.code);
+      }
+      return payload.file as { id: number; filename: string; byte_size: number };
+    },
+
+    track: (reference: string, email: string) =>
+      post<{ case: PublicCase }>('/ownership/track', { reference, email }).then((r) => r.case),
+
+    mine: () => request<{ cases: PublicCase[] }>('/ownership/mine').then((r) => r.cases),
+  },
 
   createOrder: (input: {
     brand: string;
@@ -151,5 +217,19 @@ export const api = {
       post<{ order: PublicOrder }>(`/admin/orders/${reference}/deliver`, { code }).then(
         (r) => r.order,
       ),
+    cases: (params: { status?: string; q?: string } = {}) => {
+      const search = new URLSearchParams();
+      if (params.status) search.set('status', params.status);
+      if (params.q) search.set('q', params.q);
+      const suffix = search.toString() ? `?${search}` : '';
+      return request<{ cases: AdminCase[] }>(`/admin/cases${suffix}`).then((r) => r.cases);
+    },
+    transitionCase: (reference: string, status: CaseStatus, message?: string) =>
+      post<{ case: AdminCase }>(`/admin/cases/${reference}/transition`, {
+        status,
+        message,
+      }).then((r) => r.case),
+    caseFileUrl: (reference: string, fileId: number) =>
+      `/api/admin/cases/${reference}/files/${fileId}`,
   },
 };

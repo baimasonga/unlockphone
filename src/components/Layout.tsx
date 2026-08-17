@@ -4,8 +4,8 @@ import { useAuth } from '../lib/auth-context';
 
 const NAV = [
   { to: '/unlock', label: 'Unlock a phone' },
-  { to: '/unlock-iphone', label: 'iPhone' },
-  { to: '/unlock-samsung', label: 'Samsung' },
+  { to: '/device-check', label: 'Device check' },
+  { to: '/locked-device-help', label: 'Locked device help' },
   { to: '/networks', label: 'Networks' },
   { to: '/tracking', label: 'Track order' },
 ];
@@ -213,8 +213,13 @@ export function Layout() {
                 </Link>
               </li>
               <li>
-                <Link to="/network-check" className="hover:text-brand-700">
-                  Free network check
+                <Link to="/device-check" className="hover:text-brand-700">
+                  Device status check
+                </Link>
+              </li>
+              <li>
+                <Link to="/locked-device-help" className="hover:text-brand-700">
+                  Locked device help
                 </Link>
               </li>
               <li>

@@ -5,6 +5,9 @@ import { Home } from './pages/Home';
 import { Unlock } from './pages/Unlock';
 import { Tracking } from './pages/Tracking';
 import { NetworkCheck } from './pages/NetworkCheck';
+import { DeviceCheck } from './pages/DeviceCheck';
+import { OwnershipIntake } from './pages/OwnershipIntake';
+import { CaseTracking } from './pages/CaseTracking';
 import { Networks } from './pages/Networks';
 import { Faq } from './pages/Faq';
 import { SignIn, SignUp } from './pages/Auth';
@@ -53,6 +56,9 @@ export function App() {
           <Route path="/unlock-iphone" element={<BrandLanding {...IPHONE_CONTENT} />} />
           <Route path="/unlock-samsung" element={<BrandLanding {...SAMSUNG_CONTENT} />} />
           <Route path="/network-check" element={<NetworkCheck />} />
+          <Route path="/device-check" element={<DeviceCheck />} />
+          <Route path="/locked-device-help" element={<OwnershipIntake />} />
+          <Route path="/case-tracking" element={<CaseTracking />} />
           <Route path="/networks" element={<Networks />} />
           <Route path="/tracking" element={<Tracking />} />
           <Route path="/faq" element={<Faq />} />

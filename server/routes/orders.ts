@@ -18,8 +18,10 @@ import {
   recordPayment,
 } from '../services/payments.js';
 import { submitToSupplier } from '../services/fulfilment.js';
+import { assertDeviceEligibleForUnlock } from '../services/device-status.js';
 import { orderConfirmationMail, sendMail } from '../lib/mail.js';
 import { applyDiscount } from '../../shared/money.js';
+import { validateImei } from '../../shared/imei.js';
 
 export const orderRouter = Router();
 
@@ -46,6 +48,11 @@ orderRouter.post(
     const input = parsed.data;
 
     const service = findService(input.brand, input.network);
+
+    // Refuse blacklisted / lost-stolen devices before taking any money — the
+    // network would only reject them and force a refund anyway.
+    await assertDeviceEligibleForUnlock(validateImei(input.imei).normalised);
+
     const discount = input.discount_code ? findDiscount(input.discount_code) : null;
     if (input.discount_code && !discount) {
       throw ApiError.badRequest('That discount code is not valid or has expired.');

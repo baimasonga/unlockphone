@@ -111,6 +111,64 @@ CREATE TABLE IF NOT EXISTS sessions_revoked (
   jti        TEXT PRIMARY KEY,
   revoked_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Log of device status lookups, for support history and abuse monitoring.
+CREATE TABLE IF NOT EXISTS device_checks (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  imei        TEXT NOT NULL,
+  blacklist   TEXT NOT NULL,
+  icloud_lock TEXT NOT NULL,
+  frp_lock    TEXT NOT NULL,
+  carrier     TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_device_checks_imei ON device_checks(imei);
+
+-- Proof-of-ownership cases: the lawful, owner-verified route to lock removal.
+CREATE TABLE IF NOT EXISTS ownership_cases (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  reference     TEXT NOT NULL UNIQUE,
+  user_id       INTEGER REFERENCES users(id),
+  email         TEXT NOT NULL,
+  full_name     TEXT NOT NULL,
+  imei          TEXT NOT NULL,
+  device_model  TEXT,
+  brand_slug    TEXT,
+  lock_type     TEXT NOT NULL CHECK (lock_type IN ('screen_lock','google_frp','icloud_activation')),
+  purchase_info TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'submitted',
+  authority_key TEXT,
+  package       TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_cases_email ON ownership_cases(email);
+CREATE INDEX IF NOT EXISTS idx_cases_status ON ownership_cases(status);
+
+CREATE TABLE IF NOT EXISTS ownership_case_events (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  case_id    INTEGER NOT NULL REFERENCES ownership_cases(id) ON DELETE CASCADE,
+  status     TEXT NOT NULL,
+  message    TEXT NOT NULL,
+  actor      TEXT NOT NULL DEFAULT 'system',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_case_events_case ON ownership_case_events(case_id);
+
+CREATE TABLE IF NOT EXISTS ownership_case_files (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  case_id      INTEGER NOT NULL REFERENCES ownership_cases(id) ON DELETE CASCADE,
+  filename     TEXT NOT NULL,
+  content_type TEXT NOT NULL,
+  byte_size    INTEGER NOT NULL,
+  storage_path TEXT NOT NULL,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_case_files_case ON ownership_case_files(case_id);
 `;
 
 function open(): Database.Database {
